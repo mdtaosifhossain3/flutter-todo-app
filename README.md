@@ -1,8 +1,8 @@
-##Flutter Todo List App
+Flutter Todo List App
 
 A simple todo list application built with Flutter. This app allows you to create, manage, and track your tasks.
 
-##Features:
+Features:
 
 Add new tasks
 Mark tasks as complete
@@ -10,7 +10,7 @@ Delete tasks
 Persist data (optional)
 Getting Started
 
-##Clone the repository
+Clone the repository
 Run flutter pub get to install dependencies
 Run flutter run to launch the app
 
