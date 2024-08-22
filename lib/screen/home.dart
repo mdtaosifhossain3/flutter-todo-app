@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lab/Widgets/TodoItem.dart';
-import 'package:lab/const/colors.dart';
-import 'package:lab/models/taskModel.dart';
+import 'package:lab/Widgets/todoItem.dart';
+import 'package:lab/constants/colors.dart';
+import 'package:lab/models/task_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,6 +11,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePage extends State<HomePage> {
+  late String taskId;
+  bool isEdit = false;
+  bool isInputFieldCollapsed = true;
   //tasklist
   final taskList = TaskModel.taskList();
 
@@ -28,36 +31,40 @@ class _HomePage extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: tdBgColor,
-      appBar: _buildAppbar(),
-      body: SafeArea(
-        child: Stack(
+    return SafeArea(
+      child: Scaffold(
+        appBar: _buildAppbar(),
+        resizeToAvoidBottomInset: isInputFieldCollapsed ? true : false,
+        body: Stack(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 18.00, vertical: 15.00),
+                  horizontal: 12.00, vertical: 15.00),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     searchBox(),
                     Container(
-                      padding: const EdgeInsets.only(top: 40.00, bottom: 15),
+                      padding: const EdgeInsets.only(top: 30.00, bottom: 8),
                       child: const Text("My Tasks",
                           style: TextStyle(
-                              fontSize: 30, fontWeight: FontWeight.w500)),
+                            fontSize: 30,
+                            fontWeight: FontWeight.w500,
+                          )),
                     ),
                     Expanded(
                       child: ListView(
                         children: [
                           for (TaskModel task in findTask)
                             TodoItem(
-                                task: task,
-                                onChanged: handeTodoChanged,
-                                onDelete: handleTaskDelete),
+                              task: task,
+                              onChanged: handeTodoChanged,
+                              onDelete: handleTaskDelete,
+                              onEdit: handleTaskEdit,
+                            ),
                           const SizedBox(
                             height: 70,
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -73,23 +80,31 @@ class _HomePage extends State<HomePage> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
+                            color: whiteColor,
+                            borderRadius: BorderRadius.circular(4),
                             boxShadow: const [
                               BoxShadow(
-                                  color: Colors.grey,
-                                  blurRadius: 10.00,
+                                  color: greyColor,
+                                  blurRadius: 1.00,
                                   spreadRadius: 0.00,
                                   offset: Offset(0.0, 0.0))
                             ]),
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
                           child: TextField(
+                            onTap: () {
+                              setState(() {
+                                isInputFieldCollapsed = true;
+                              });
+                            },
                             controller: textClt,
+                            style: const TextStyle(color: greyColor),
                             decoration: const InputDecoration(
-                                hintText: "Add Task...",
-                                contentPadding: EdgeInsets.only(left: 15),
-                                border: InputBorder.none),
+                              hintText: "Add Task...",
+                              hintStyle: TextStyle(color: greyColor),
+                              contentPadding: EdgeInsets.only(left: 15),
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
                       ),
@@ -99,20 +114,22 @@ class _HomePage extends State<HomePage> {
                     ),
                     ElevatedButton(
                         onPressed: () {
-                          handleTask(textClt.text);
+                          isEdit
+                              ? handleTaskEditSubmit()
+                              : handleTask(textClt.text);
                         },
                         style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               vertical: 14.00,
                             ),
                             elevation: 10.00,
-                            backgroundColor: tdBlue,
-                            foregroundColor: Colors.white,
+                            backgroundColor: primaryColor,
+                            foregroundColor: whiteColor,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6))),
+                                borderRadius: BorderRadius.circular(4))),
                         child: const Icon(
                           Icons.add,
-                          size: 38,
+                          size: 30,
                         ))
                   ],
                 ),
@@ -130,21 +147,48 @@ class _HomePage extends State<HomePage> {
     });
   }
 
+  void handleTaskEdit(String id) {
+    isEdit = true;
+    final foundItem = taskList.firstWhere((item) => item.id == id);
+    taskId = foundItem.id.toString();
+
+    textClt.text = foundItem.text.toString();
+  }
+
+  void handleTaskEditSubmit() {
+    isEdit = false;
+    setState(() {
+      final foundItem = taskList.firstWhere((item) => item.id == taskId);
+
+      foundItem.text = textClt.text;
+      textClt.text = '';
+    });
+  }
+
   void handleTaskDelete(String id) {
     setState(() {
       taskList.removeWhere((element) => element.id == id);
     });
   }
 
-  void handleTask(String task) {
-    setState(() {
-      taskList.add(TaskModel(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        text: task,
+  handleTask(String task) {
+    if (textClt.text == '') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Please Enter a Task"),
+        dismissDirection: DismissDirection.horizontal,
       ));
-    });
+      return;
+    } else {
+      setState(() {
+        taskList.add(TaskModel(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          text: task,
+        ));
+      });
 
-    textClt.clear();
+      textClt.clear();
+      return;
+    }
   }
 
   void runFilter(String keyWord) {
@@ -167,13 +211,22 @@ class _HomePage extends State<HomePage> {
   _buildAppbar() {
     return AppBar(
       elevation: 0.00,
-      backgroundColor: tdBgColor,
-      foregroundColor: Colors.black,
-      leading: const Icon(Icons.menu, size: 35.00),
+      leading: const Icon(
+        Icons.menu,
+        size: 35.00,
+        color: whiteColor,
+      ),
+      title: const Text(
+        "GetTODOs",
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: greyColor, fontSize: 24),
+      ),
+      centerTitle: true,
       actions: const [
         Padding(
           padding: EdgeInsets.only(right: 10.0),
           child: CircleAvatar(
+            backgroundColor: primaryColor,
             child: Icon(Icons.person, size: 20.00),
           ),
         )
@@ -185,14 +238,23 @@ class _HomePage extends State<HomePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15.00),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(24.00)),
+          color: whiteColor, borderRadius: BorderRadius.circular(24.00)),
       child: TextField(
+        onTap: () {
+          setState(() {
+            isInputFieldCollapsed = false;
+          });
+        },
         onChanged: (value) => runFilter(value),
+        style: const TextStyle(color: greyColor),
         decoration: const InputDecoration(
             hintText: "Search Here...",
-            hintStyle: TextStyle(fontSize: 14.00),
+            hintStyle: TextStyle(fontSize: 14.00, color: greyColor),
             border: InputBorder.none,
-            prefixIcon: Icon(Icons.search),
+            prefixIcon: Icon(
+              Icons.search,
+              color: greyColor,
+            ),
             prefixIconConstraints: BoxConstraints(maxHeight: 20, minWidth: 30)),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lab/constants/colors.dart';
 import 'package:lab/screen/home.dart';
 
 void main() {
@@ -15,7 +16,11 @@ class MyApp extends StatelessWidget {
       title: 'Todo App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.dark,
+        appBarTheme: const AppBarTheme(
+            backgroundColor: backgroundColor,
+            surfaceTintColor: backgroundColor),
+        scaffoldBackgroundColor: backgroundColor,
         useMaterial3: true,
       ),
       home: const HomePage(),
